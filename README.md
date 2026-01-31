@@ -1,7 +1,3 @@
-# superstore-analysis
-SQL, Pandas, and Power BI analysis of Superstore sales data
-
-
 # Superstore Sales & Profit Analysis
 
 ## 📌 Project Overview
