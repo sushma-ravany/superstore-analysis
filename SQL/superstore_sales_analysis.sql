@@ -1,54 +1,61 @@
-/* =====================================================
-   Superstore Sales & Profit Analysis (USA)
-   Dataset Scope : Retail orders from the United States
-   Tool Used     : Microsoft SQL Server
-   Purpose       : Analyze sales performance, profitability,
-                   trends, and year-over-year growth
-   ===================================================== */
+    /* =========================================================
+   Superstore End-to-End Data Analysis
+   Layer		: SQL (Data Validation & Analytics Layer)
+   Dataset		: Sample Superstore Orders(USA)
+   Tool Used	: Microsoft SQL Server
+
+   Description:
+   - Performs data validation and exploratory analysis
+   - Generates business KPIs and insights
+   - Creates an analytics-ready view (vw_superstore_cleaned)
+     to be consumed by Pandas and Power BI
+   ========================================================= */
 
 
 /* =====================================================
    SECTION 1: Dataset Overview & Validation
    ===================================================== */
 
-
 SELECT COUNT(*) AS total_rows
 FROM Orders;
 
 
 SELECT 
-    COUNT(DISTINCT order_id) AS distinct_orders,
-    COUNT(DISTINCT customer_id) AS distinct_customers,
-    COUNT(DISTINCT product_id) AS distinct_products
-FROM orders;
+    COUNT(DISTINCT Order_ID) AS distinct_orders,
+    COUNT(DISTINCT Customer_ID) AS distinct_customers,
+    COUNT(DISTINCT Product_ID) AS distinct_products
+FROM Orders;
+
 
 
 --------------------- Primary Key Analysis-----------------
 
--- Check if order_id is unique
+-- Check if Order_id is unique
 
-SELECT order_id, COUNT(*) 
-FROM orders
-GROUP BY order_id
+SELECT Order_ID, COUNT(*) 
+FROM Orders
+GROUP BY Order_ID
 HAVING COUNT(*) > 1;
 
+--Result: Order_id is not unique
 
--- Check composite key (order_id, product_id)
 
-SELECT order_id, product_id, COUNT(*) 
-FROM orders
-GROUP BY order_id, product_id
+-- Check composite key (Order_id, Product_id)
+
+SELECT Order_ID, Product_ID, COUNT(*) 
+FROM Orders
+GROUP BY Order_ID, Product_ID
 HAVING COUNT(*) > 1;
 
 
 -- Result: No natural primary key exists.
 -- Decision: Introduce a surrogate key (order_line_id) to uniquely identify rows.
 
-ALTER TABLE orders
+ALTER TABLE Orders
 ADD order_line_id INT IDENTITY(1,1);  --identity(1,1): start at 1 and increment by 1
 
 
-ALTER TABLE orders
+ALTER TABLE Orders
 ADD CONSTRAINT PK_orders
 PRIMARY KEY (order_line_id);		--Adds Primary key constraint to order_line_id
 
@@ -60,10 +67,10 @@ PRIMARY KEY (order_line_id);		--Adds Primary key constraint to order_line_id
 
 --Overall Business KPIs
 SELECT
-    ROUND(SUM(sales), 2) AS total_sales,
-    ROUND(SUM(profit), 2) AS total_profit,
-    COUNT(DISTINCT order_id) AS total_orders
-FROM orders;
+    ROUND(SUM(Sales), 2) AS total_sales,
+    ROUND(SUM(Profit), 2) AS total_profit,
+    COUNT(DISTINCT Order_ID) AS total_orders
+FROM Orders;
 
 
 
@@ -74,24 +81,25 @@ FROM orders;
 -- Yearly Sales & Profit trend
 
 SELECT
-    YEAR(order_date) AS year,
-    ROUND(SUM(sales), 2) AS total_sales,
-    ROUND(SUM(profit), 2) AS total_profit
-FROM orders
-GROUP BY YEAR(order_date)
+    YEAR(Order_Date) AS year,
+    ROUND(SUM(Sales), 2) AS total_sales,
+    ROUND(SUM(Profit), 2) AS total_profit
+FROM Orders
+GROUP BY YEAR(Order_Date)
 ORDER BY year;
 
 
 -- Monthly Sales & Profit trend
 
-select
-	year(Order_Date) as year,
-	month(Order_Date) as month,
-	round(sum(Sales), 2) as monthly_sales,
-	round(sum(Profit), 2) as monthly_profit
-from Orders
-group by year(Order_Date), month(Order_Date)
-order by Year, Month
+SELECT
+	YEAR(Order_Date) AS year,
+	MONTH(Order_Date) AS month,
+	DATENAME(MONTH, Order_Date) AS month_name,
+	ROUND(SUM(Sales), 2) AS monthly_sales,
+	ROUND(SUM(Profit), 2) AS monthly_profit
+FROM Orders
+GROUP BY YEAR(Order_Date), MONTH(Order_Date), DATENAME(MONTH, Order_Date) 
+ORDER BY year, month;
 
 
 
@@ -105,21 +113,21 @@ order by Year, Month
 
 SELECT
     Category,
-    ROUND(SUM(sales), 2) AS total_sales,
-    ROUND(SUM(profit), 2) AS total_profit
-FROM orders
-GROUP BY category
+    ROUND(SUM(Sales), 2) AS total_sales,
+    ROUND(SUM(Profit), 2) AS total_profit
+FROM Orders
+GROUP BY Category
 ORDER BY total_sales DESC;
 
 
 --Loss Making Sub-Categories
 
 SELECT
-    sub_category,
-    ROUND(SUM(profit), 2) AS total_profit
-FROM orders
+    Sub_Category,
+    ROUND(SUM(Profit), 2) AS total_profit
+FROM Orders
 GROUP BY sub_category
-HAVING SUM(profit) < 0
+HAVING SUM(Profit) < 0
 ORDER BY total_profit;
 
 
@@ -127,78 +135,195 @@ ORDER BY total_profit;
 
 --Top 5 Products by Profit
 
-SELECT top 5
+SELECT TOP 5
 	Product_Name,
-	ROUND(SUM(profit),2) AS total_profit
-FROM orders
+	ROUND(SUM(Profit),2) AS total_profit
+FROM Orders
 GROUP BY Product_Name
 ORDER BY total_profit DESC;
 
 
 --Top 5 Loss-Making Products
 
-select top 5
+SELECT TOP 5
 	Product_Name,
-	ROUND(SUM(profit),2) AS total_profit
-FROM orders
+	ROUND(SUM(Profit),2) AS total_profit
+FROM Orders
 GROUP BY Product_Name
-HAVING SUM(profit) < 0
+HAVING SUM(Profit) < 0
 ORDER BY total_profit ;
 
 
---Rank Products by Profit
+--Top products within each Category
 
 SELECT 
+	Category,
 	Product_ID, 
 	Product_Name,
-	ROUND(sum(Profit),2) AS product_profit,
-	DENSE_RANK() OVER(ORDER BY SUM(Profit) DESC) AS profit_rank
+	ROUND(SUM(Profit),2) AS product_profit,
+	DENSE_RANK() OVER(PARTITION BY Category ORDER BY SUM(Profit) DESC) AS profit_rank
 FROM Orders
-GROUP BY Product_ID, Product_Name;
+GROUP BY Category, Product_ID, Product_Name;
 
 
 
 /* =====================================================
-   SECTION 5: Region & Customer Analysis
+   SECTION 5: Region Analysis
    ===================================================== */
    
 --Region-wise Sales and Profit.
 
 SELECT 
-	region,
-	ROUND(SUM(Sales),2) AS Total_Sales,
-	ROUND(SUM(Profit),2) AS Total_Profit
-FROM orders
-GROUP BY region;
+	Region,
+	ROUND(SUM(Sales),2) AS region_sales,
+	ROUND(SUM(Profit),2) AS region_profit
+FROM Orders
+GROUP BY Region
+ORDER BY region_sales DESC;
 
 
---Customers with Above-Average Spending
+--Revenue per State
 
 SELECT 
-	Customer_Name,
-	ROUND(SUM(sales),2) AS total_sales
-FROM orders
-GROUP BY Customer_Name
-HAVING SUM(sales) > (SELECT AVG(sales) FROM orders);
+	State, 
+    ROUND(SUM(Sales),2) AS total_sales,
+    ROUND(SUM(Profit),2) AS total_profit
+FROM Orders
+GROUP BY State
+ORDER BY total_sales DESC;
 
 
 
 /* =====================================================
-   SECTION 5: Year-over-Year Growth Analysis
+   SECTION 6: Customer Analysis
    ===================================================== */
 
-WITH yearly_sales AS(
-			SELECT
-				YEAR(order_date) AS year,
-				SUM(sales) AS total_sales
-			FROM Orders
-			GROUP BY YEAR(order_date)
-		)
+--Number of purchases per customer (most frequent buyers)
 
 SELECT
-	year,
-	total_sales,
-	total_sales - LAG(total_sales, 1, 0) OVER(ORDER BY year) AS yoy_growth
+	Customer_ID, 
+	Customer_Name,
+	COUNT(DISTINCT Order_ID) AS purchase_count
+FROM Orders
+GROUP BY Customer_ID, Customer_Name
+ORDER BY purchase_count DESC;
+
+
+-- Total spending by customers (top customers)
+
+SELECT 
+	Customer_ID, 
+	Customer_Name,
+	ROUND(SUM(Sales), 2) AS total_spent
+FROM Orders
+GROUP BY Customer_ID, Customer_Name
+ORDER BY total_spent DESC;
+
+
+--Customers with Above-Average Spending
+
+WITH customer_sales AS
+(
+	SELECT 
+		Customer_ID,
+		Customer_Name,
+		SUM(Sales) AS total_sales
+	FROM Orders
+	GROUP BY Customer_ID, Customer_Name
+)
+
+SELECT * 
+FROM customer_sales
+WHERE total_sales > (
+	SELECT AVG(total_sales) FROM customer_sales);
+
+
+
+/* =====================================================
+   SECTION 7:  Others
+   ===================================================== */
+
+--Year-over-Year Growth
+
+WITH yearly_sales AS
+(
+	SELECT
+		YEAR(Order_Date) AS year,
+		SUM(Sales) AS total_sales
+	FROM Orders
+	GROUP BY YEAR(Order_Date)
+)
+
+SELECT
+    year,
+    total_sales,
+    total_sales - LAG(total_sales) OVER(ORDER BY year) AS yoy_growth,
+    ROUND(
+        (total_sales - LAG(total_sales) OVER(ORDER BY year)) * 100.0 /
+        LAG(total_sales) OVER(ORDER BY year), 2
+    ) AS yoy_growth_pct
 FROM yearly_sales;
 
 
+--Shipping Mode analysis
+
+SELECT
+    Ship_Mode,
+    COUNT(*) AS order_count,
+    ROUND(SUM(Sales),2) AS total_sales,
+    ROUND(SUM(Profit),2) AS total_profit
+FROM Orders
+GROUP BY Ship_Mode
+ORDER BY total_profit DESC;
+
+
+--Segment profitability
+
+SELECT
+    Segment,
+    ROUND(SUM(Sales),2) AS sales,
+    ROUND(SUM(Profit),2) AS profit
+FROM Orders
+GROUP BY Segment
+ORDER BY profit DESC;
+
+
+--Discount impact
+
+SELECT
+    Discount,
+    COUNT(*) AS order_count,
+    ROUND(SUM(Sales),2) AS total_sales,
+    ROUND(AVG(Profit),2) AS avg_profit
+FROM Orders
+GROUP BY Discount
+ORDER BY Discount;
+
+
+
+
+/* =====================================================
+   SECTION 8:  FINAL DATA VIEW FOR ANALYTICS
+   ===================================================== */
+   
+-- Final analytics-ready view
+-- This view is consumed by Pandas and Power BI
+
+
+CREATE OR ALTER VIEW vw_superstore_cleaned AS
+SELECT
+    Order_ID,
+    Order_Date,
+    Ship_Date,
+    Customer_ID,
+    Customer_Name,
+    Segment,
+    Region,
+    State,
+    Category,
+    Sub_Category,
+    Product_Name,
+    Sales,
+    Profit,
+    Discount
+FROM Orders;
