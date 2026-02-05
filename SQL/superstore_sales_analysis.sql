@@ -27,7 +27,6 @@ SELECT
 FROM Orders;
 
 
-
 --------------------- Primary Key Analysis-----------------
 
 -- Check if Order_id is unique
