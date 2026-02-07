@@ -8,7 +8,7 @@
    - Performs data validation and exploratory analysis
    - Generates business KPIs and insights
    - Creates an analytics-ready view (vw_superstore_cleaned)
-     to be consumed by Pandas and Power BI
+     to be consumed by Pandas
    ========================================================= */
 
 
@@ -300,14 +300,11 @@ ORDER BY Discount;
 
 
 
-
 /* =====================================================
-   SECTION 8:  FINAL DATA VIEW FOR ANALYTICS
+   SECTION 8:  DATA VIEW FOR ANALYTICS
    ===================================================== */
    
--- Final analytics-ready view
--- This view is consumed by Pandas and Power BI
-
+-- This view is consumed by Pandas
 
 CREATE OR ALTER VIEW vw_superstore_cleaned AS
 SELECT
@@ -321,8 +318,129 @@ SELECT
     State,
     Category,
     Sub_Category,
+	Product_ID,
     Product_Name,
     Sales,
     Profit,
-    Discount
+    Discount,
+	Quantity,
+	Ship_Mode
 FROM Orders;
+
+
+
+---The above view was used in Pandas. Existence of duplicates was found
+
+/* =====================================================
+   SECTION 9:  VALIDATING AND HANDLING DUPLICATES 
+   ===================================================== */
+
+-- Check for duplicates rows
+
+SELECT
+	Order_ID,
+    Order_Date,
+	Ship_Date,
+	Customer_ID,
+	Product_ID,
+	Sales,
+	Quantity,
+	Profit,
+	Discount,
+	City,
+	COUNT(*) as row_count
+FROM Orders
+GROUP BY 	
+	Order_ID,
+    Order_Date,
+	Ship_Date,
+	Customer_ID,
+	Product_ID,
+	Sales,
+	Quantity,
+	Profit,
+	Discount,
+	City
+HAVING COUNT(*) > 1;
+
+
+--Verify duplicates for the respective order_id
+
+SELECT * 
+FROM Orders
+WHERE Order_ID = 'US-2015-150119'
+
+
+----OBSERVATION: Duplicate rows exist
+----DECISION: Drop duplicates (performed using Pandas in Jupyter Notebook)
+
+
+--Create a new view without duplicates
+
+CREATE OR ALTER VIEW vw_superstore_cleanv1 AS
+
+WITH deduplicate_cte AS
+(
+	SELECT 
+	ROW_NUMBER() OVER
+					(	PARTITION BY
+						Order_ID, Order_Date, Ship_Date, Customer_ID, Product_ID, Sales, Quantity, Profit, Discount, State
+						ORDER BY Order_ID
+					) as rn,
+	Order_ID,
+    Order_Date,
+    Ship_Date,
+    Customer_ID,
+    Customer_Name,
+    Segment,
+    Region,
+    State,
+    Category,
+    Sub_Category,
+	Product_ID,
+    Product_Name,
+    Sales,
+    Profit,
+    Discount,
+	Quantity,
+	Ship_Mode
+FROM Orders)
+
+SELECT 
+	Order_ID,
+    Order_Date,
+    Ship_Date,
+    Customer_ID,
+    Customer_Name,
+    Segment,
+    Region,
+    State,
+    Category,
+    Sub_Category,
+	Product_ID,
+    Product_Name,
+    Sales,
+    Profit,
+    Discount,
+	Quantity,
+	Ship_Mode
+FROM deduplicate_cte
+WHERE rn = 1;
+
+
+--Verify key metrics
+
+SELECT COUNT(*) AS total_rows
+FROM vw_superstore_cleanv1;
+
+SELECT 
+    COUNT(DISTINCT Order_ID) AS distinct_orders,
+    COUNT(DISTINCT Customer_ID) AS distinct_customers,
+    COUNT(DISTINCT Product_ID) AS distinct_products
+FROM vw_superstore_cleanv1;
+
+SELECT
+    ROUND(SUM(Sales), 2) AS total_sales,
+    ROUND(SUM(Profit), 2) AS total_profit,
+    COUNT(DISTINCT Order_ID) AS total_orders
+FROM vw_superstore_cleanv1;
