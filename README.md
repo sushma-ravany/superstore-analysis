@@ -1,53 +1,80 @@
-# Superstore Sales & Profit Analysis
+# 📊 Superstore End-to-End Data Analysis (SQL | Pandas | Power BI)
 
 ## 📌 Project Overview
-This project analyzes retail sales data from a Superstore to uncover sales trends, profitability patterns, and year-over-year growth insights.
-The goal is to demonstrate practical data analysis skills using SQL, Pandas and Power BI in an end-to-end analytics workflow.
-
----
-
-## 📊 Dataset
-- **Source**: Superstore Orders dataset
-- **Geographic Scope**: United States only
-- **Granularity**: Order-line level transactions
-- **Key Fields**:
-  - Order Date
-  - Sales
-  - Profit
-  - Category & Sub-Category
-  - Customer & Product details
-  - Region
+This project analyzes Superstore sales data to understand revenue drivers, profitability, customer behavior, shipping efficiency, and discount impact.  
+The analysis follows a real-world analytics pipeline with **SQL as the source of truth**, **Pandas for exploration**, and **Power BI for visualization**.
 
 ---
 
 ## 🛠 Tools & Technologies
-- **SQL Server** – Data exploration, KPI calculation, and trend analysis
-- **Python (Pandas, NumPy, Matplotlib)** – Exploratory Data Analysis (EDA) *(in progress)*
-- **Power BI** – Interactive dashboard creation *(in progress)*
+- SQL Server
+- Python (Pandas, NumPy, Matplotlib)
+- Power BI
+- Jupyter Notebook
 
 ---
 
-## 📈 Analysis Performed
+## 🧩 Analytics Workflow
 
-### SQL Analysis
-- Overall business KPIs (Total Sales, Total Profit, Orders)
-- Year-wise and month-wise sales & profit trends
-- Category and sub-category performance
-- Identification of loss-making segments
-- Year-over-Year (YoY) sales growth using window functions
+### 1️⃣ SQL – Data Validation & Preparation (Foundation Layer)
+SQL is used as the **system of record** for validating and preparing data before analysis.
 
-### Pandas (EDA)
-- Data cleaning and feature engineering
-- Time-series analysis (monthly & yearly trends)
-- Sales vs Profit visualizations
-- Profit distribution analysis
+**Key activities in SQL:**
+- Selected relevant business columns (orders, products, customers, shipping, discounts)
+- Checked for duplicate records at order–product level
+- Validated total sales, profit, and order counts
+- Ensured consistent data types and formats
+- Created clean analytical views for downstream use
 
-### Power BI (Planned)
-- KPI cards for Sales, Profit, Orders, YoY Growth
-- Trend analysis dashboard
-- Category & regional performance views
+This ensures that all analysis is performed on **trusted and validated data**.
 
 ---
 
-## 📂 Repository Structure
+### 2️⃣ Pandas / Jupyter – Exploratory Data Analysis (Analysis Layer)
+Python is used for in-depth exploration, feature engineering, and insight generation.
+
+**Key analysis performed:**
+- KPI Summary (Total Sales, Profit, Orders)
+- Sales and Profit by Category
+- Loss-Making Sub-Categories
+- Regional Performance Analysis
+- Customer-Level Insights
+- Shipping Mode Analysis (volume, profit, delivery time)
+- Discount vs Profit Analysis
+- Feature engineering:
+  - Shipping days
+  - Order year
+  - Profit percentage
+- Data Visualization:
+  - Monthly Sales Trend
+  - Sales by Category
+  - Profit Distribution
+  - Profit by Sub-Category
+  - Average Profit by Discount Level
+
+Pandas is used to **analyze and enrich data**.
+
+---
+
+### 3️⃣ Power BI – Dashboarding & Storytelling (Presentation Layer)  (Planned and inprogress)
+Power BI is used to communicate insights to business users through interactive dashboards.
+
+**Dashboards include:**
+- KPI cards for Sales, Profit, Orders
+- Monthly sales trend
+- Category and regional performance
+- Shipping efficiency comparison
+- Discount impact on profitability
+- Customer contribution analysis
+
+Power BI focuses on **clarity and decision-making**.
+
+---
+
+## 📌 Key Business Insights (High-Level)
+- Standard Class shipping drives the highest revenue due to order volume, despite longer delivery times
+- High discounts consistently reduce profitability without increasing order volume proportionately
+- Certain sub-categories generate losses and require pricing or cost review
+- Sales show an overall upward trend with seasonal fluctuations
+- A small set of customers contributes a large share of total revenue
 
